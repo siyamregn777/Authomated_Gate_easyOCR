@@ -1,3 +1,4 @@
+#database.py
 import mysql.connector
 
 def init_db():
