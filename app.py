@@ -1,5 +1,3 @@
-#app.py
-
 from flask import Flask, request, jsonify, render_template
 import mysql.connector
 
@@ -69,6 +67,87 @@ def register_plate():
     conn.commit()
     conn.close()
     return jsonify({"message": "License Plate Registered!"}), 200
+
+@app.route('/update_plate', methods=['POST'])
+def update_plate():
+    id_number = request.form['update_id']
+    old_plate = request.form['old_plate']
+    new_plate = request.form['new_plate']
+
+    conn = mysql.connector.connect(
+        host='localhost',
+        user='root',  # Replace with your MySQL username
+        password='root',  # Replace with your MySQL password
+        database='Registration'  # Updated database name
+    )
+    c = conn.cursor()
+
+    # Check if the existing plate belongs to the given ID
+    c.execute('SELECT * FROM plates WHERE id_number = %s AND plate = %s', (id_number, old_plate))
+    plate = c.fetchone()
+    
+    if plate is None:
+        conn.close()
+        return jsonify({"message": "No license plate found for the given ID!"}), 404
+
+    # Update the license plate
+    c.execute('UPDATE plates SET plate = %s WHERE id_number = %s AND plate = %s', (new_plate, id_number, old_plate))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": "License Plate Updated!"}), 200
+
+@app.route('/delete_plate', methods=['POST'])
+def delete_plate():
+    id_number = request.form['delete_id']
+    plate = request.form['delete_plate']
+
+    conn = mysql.connector.connect(
+        host='localhost',
+        user='root',  # Replace with your MySQL username
+        password='root',  # Replace with your MySQL password
+        database='Registration'  # Updated database name
+    )
+    c = conn.cursor()
+
+    # Check if the existing plate belongs to the given ID
+    c.execute('SELECT * FROM plates WHERE id_number = %s AND plate = %s', (id_number, plate))
+    existing_plate = c.fetchone()
+    
+    if existing_plate is None:
+        conn.close()
+        return jsonify({"message": "No license plate found for the given ID!"}), 404
+
+    # Delete the license plate
+    c.execute('DELETE FROM plates WHERE id_number = %s AND plate = %s', (id_number, plate))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": "License Plate Deleted!"}), 200
+
+@app.route('/delete_driver', methods=['POST'])
+def delete_driver():
+    id_number = request.form['delete_driver_id']
+
+    conn = mysql.connector.connect(
+        host='localhost',
+        user='root',  # Replace with your MySQL username
+        password='root',  # Replace with your MySQL password
+        database='Registration'  # Updated database name
+    )
+    c = conn.cursor()
+
+    # Check if the driver exists
+    c.execute('SELECT * FROM drivers WHERE id_number = %s', (id_number,))
+    driver = c.fetchone()
+
+    if driver is None:
+        conn.close()
+        return jsonify({"message": "No driver found with the given ID!"}), 404
+
+    # Delete the driver, which will also delete associated license plates
+    c.execute('DELETE FROM drivers WHERE id_number = %s', (id_number,))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": "Driver and associated license plates deleted!"}), 200
 
 @app.route('/')
 def index():
